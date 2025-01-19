@@ -41,6 +41,8 @@ class DefaultEscalateActionSelector(EscalateActionSelector):
     def get_escalate_action(self, *, state: State, session: int, target_session: int,
             agent: str, hostname: str) -> \
                     Optional[EscalateAction]:
+        if hostname not in state.sessions[agent][session].operating_system.keys():
+            return None
         if state.sessions[agent][session].operating_system[hostname] == OperatingSystemType.WINDOWS:
             return JuicyPotato(session=session, target_session=target_session,
                     agent=agent)
