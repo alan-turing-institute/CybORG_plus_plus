@@ -787,19 +787,20 @@ class SimplifiedCAGE:
     A simplified version of the CAGE 2 Challenge environment 
     with faster execution speed and parallelism.
     '''
-    def __init__(self, num_envs, num_nodes=13, remove_bugs=False):
-
+    def __init__(self, num_envs, num_nodes=13, remove_bugs=False, red_agent=None, blue_agent=None):
         # basic parameters
         self.num_envs = num_envs
         self.num_nodes = num_nodes
         self.remove_bugs = remove_bugs
+        self.red_agent = red_agent  # Optional automated red agent
+        self.blue_agent = blue_agent  # Optional automated blue agent
 
         # map integer in host_alloc[valid] exes to action name
         self.action_mapping = action_mapping()
 
         # reset all the parameters
         self.reset()
-
+        
     def _set_init(
         self, num_envs, num_nodes, decoys=None, impacted=None, 
         state=None, current_processes=None, detection=None):
@@ -898,25 +899,29 @@ class SimplifiedCAGE:
         return state, info
 
 
-    def step(self, red_action, blue_action):
+    def step(self, red_action=None, blue_action=None):
         err_msg = 'Ensure batch size is correct.'
+        
+        # If an agent is provided, use it to get the action
+        if self.red_agent is not None and red_action is None:
+            red_action = self.red_agent.get_action(self.state['Red'])
+
+        if self.blue_agent is not None and blue_action is None:
+            blue_action = self.blue_agent.get_action(self.state['Blue'])
+
         assert red_action.shape[0] == self.num_envs, err_msg
         assert blue_action.shape[0] == self.num_envs, err_msg
 
         # modify the state based on the actions
-        # 1.0s over 10_000
         true_state, reward = self._process_actions(
             self.state, red_action, blue_action, self.subnets)
         self.state = true_state.copy()
 
         # update the reward based on access
-        # 0.001s over 10_000
         reward = self._process_reward(true_state, reward, self.impacted)
         done = np.zeros((true_state.shape[0], 1))
 
         # process the state for different observers
-        # log the processed states 
-        # 0.01s over 10_000
         next_state = self._process_state(
             state=true_state, logged_decoys=self.current_decoys, 
             red_action=red_action, blue_action=blue_action)
