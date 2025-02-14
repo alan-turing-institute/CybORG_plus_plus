@@ -298,50 +298,5 @@ class Restore_decoys(React_restore_minimal):
 
         return action.reshape(-1, 1).astype(int)
 
-
-if __name__ == '__main__':
-        
-    from minimal import SimplifiedCAGE
-
-    seed = 55749 # random.randint(1, 100000)
-    np.random.seed(seed)
-
-    # initialise environment
-    batch_size = 1
-    env = SimplifiedCAGE(num_envs=batch_size, num_nodes=13)
-    s, _ = env.reset()
-
-    # initialise the agents 
-    red_agent = Meander_minimal()
-    blue_agent = Restore_decoys() 
-
-    reward_log = []
-    actions = []
-    total_reward = np.zeros(batch_size)
-    for i in range(100):
-        print('###################')
-
-        print(f"{i} - {s['Red']}")
-
-        #print(s['Blue'][:, :-26].reshape(s['Blue'].shape[0], -1, 4))
-
-        blue_action = blue_agent.get_action(observation=s['Blue'])
-        red_action = red_agent.get_action(observation=s['Red']) 
-        print(f'Red: {red_action.reshape(-1)} - Blue: {blue_action.reshape(-1)}')
-        s, r, d, i = env.step(
-            blue_action=blue_action, red_action=red_action)
-        total_reward += r['Blue'].reshape(-1)
-        reward_log.append(r['Blue'].reshape(-1))
-        print('Reward ', r['Blue'])
-        print(actions.append(red_action[0]))
-
-
-    print(actions)
-    print(f'Total Reward: {total_reward}' )
-    print(np.stack(reward_log, axis=-1))
-    print('SEED', seed)
-            
-
-
     
     
