@@ -63,7 +63,10 @@ class CAGERedWrapper(gym.Env):
     def step(self, action):
         """ Take a step where the RL agent controls the red team. """
         red_action = np.array([[action]])  # Format action correctly
-        blue_action = self.env.blue_agent.get_action(self.env.state['Blue'])  # Fixed blue agent
+
+        # Flatten Blue observation to match what get_action() expects**
+        blue_obs = self.env.state['Blue'].reshape(-1)  # **Ensure it's 1D**
+        blue_action = self.env.blue_agent.get_action(blue_obs)  # Fixed blue agent
 
         state, rewards, done, info = self.env.step(blue_action=blue_action, red_action=red_action)
 
