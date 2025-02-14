@@ -928,6 +928,7 @@ class SimplifiedCAGE:
         self.proc_states = next_state
         info = self._get_info()
 
+        
         return next_state, reward, done, info
         
 
@@ -1305,6 +1306,7 @@ class SimplifiedCAGE:
         obs_state = {
             'Red': red_state, 'Blue': blue_state
         }
+
 
         return obs_state
 

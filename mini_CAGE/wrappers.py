@@ -1,7 +1,9 @@
 import numpy as np
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 from minimal import SimplifiedCAGE
+
+MAX_STEPS = 20
 
 class CAGEBlueWrapper(gym.Env):
     """
@@ -13,27 +15,33 @@ class CAGEBlueWrapper(gym.Env):
         super(CAGEBlueWrapper, self).__init__()
         
         self.env = SimplifiedCAGE(num_envs=1, num_nodes=13, red_agent=red_agent)
-
-        # **Fix the observation space to match the actual Blue state**
-        obs_shape = self.env.reset()[0]['Blue'].shape
-        self.observation_space = spaces.Box(low=-1, high=1, shape=obs_shape, dtype=np.float32)
+        self.episode_length = 0
+        temp_state, _ = self.env.reset()
+        blue_obs_shape = temp_state['Blue'].shape
         
-        # Define Blue action space (Discrete: number of possible actions)
-        self.action_space = spaces.Discrete(56)
+        self.observation_space = spaces.Box(low=-1, high=1, shape=blue_obs_shape, dtype=np.float32)
+        self.action_space = spaces.Discrete(len(self.env.action_mapping['Blue'])) 
 
-    def reset(self):
+
+    def reset(self, seed=None):
         """ Reset environment and return the blue observation. """
-        state, _ = self.env.reset()
-        return state['Blue'].astype(np.float32)  # **Ensure correct format**
+        state, info = self.env.reset()
+        self.episode_length = 0
+        self.state_po = state
+        return state['Blue'].astype(np.float32), info  # **Ensure correct format**
 
     def step(self, action):
         """ Take a step where the RL agent controls the blue team. """
         blue_action = np.array([[action]])  # Format action correctly
-        red_action = self.env.red_agent.get_action(self.env.state['Red'])  # Fixed red agent
+        self.episode_length += 1
+        red_obs = self.state_po['Red']
+        red_action = self.env.red_agent.get_action(red_obs)
         
         state, rewards, done, info = self.env.step(blue_action=blue_action, red_action=red_action)
-        
-        return state['Blue'].astype(np.float32), float(rewards['Blue'][0][0]), False, info
+        self.state_po = state
+        done = self.episode_length >= MAX_STEPS
+        return state['Blue'].astype(np.float32), float(rewards['Blue'][0][0]), done, False, info
+
 
 class CAGERedWrapper(gym.Env):
     """
@@ -46,41 +54,30 @@ class CAGERedWrapper(gym.Env):
 
         self.env = SimplifiedCAGE(num_envs=1, num_nodes=13, blue_agent=blue_agent)
 
-        # **🔹 Fix: Get Red observation shape dynamically**
         temp_state, _ = self.env.reset()
-        red_obs_shape = temp_state['Red'].shape  # **Ensure this is actually (40,)!**
-        
-        print(f"🔍 Detected Red Observation Shape: {red_obs_shape}")  # Debugging
-
+        red_obs_shape = temp_state['Red'].shape  # Ensure this is actually (40,)!
+    
         self.observation_space = spaces.Box(low=-1, high=1, shape=red_obs_shape, dtype=np.float32)
         self.action_space = spaces.Discrete(56)  # Red action space
+        self.state_po = None
 
-    def reset(self):
+    def reset(self, seed=None):
         """ Reset environment and return the red observation. """
-        state, _ = self.env.reset()
-        return state['Red'].astype(np.float32)  # **Ensure correct shape**
+        state, info = self.env.reset()
+        self.state_po = state
+        self.episode_length = 0
+        return state['Red'].astype(np.float32), info  # **Ensure correct shape**
 
     def step(self, action):
         """ Take a step where the RL agent controls the red team. """
         red_action = np.array([[action]])  # Format action correctly
+        self.episode_length += 1
 
-        # Debugging: Print the structure of `self.env.state`
-        print(f"🔍 Debug: `self.env.state` type: {type(self.env.state)}")
-        print(f"🔍 Debug: `self.env.state` keys (if dict): {self.env.state.keys() if isinstance(self.env.state, dict) else 'Not a dict'}")
-
-        if isinstance(self.env.state, dict) and 'Blue' in self.env.state:
-            blue_obs = self.env.state['Blue']
-        else:
-            raise KeyError("`self.env.state` does not contain 'Blue'. Check environment output.")
-
-        # **Ensure blue_obs is in the correct format**
-        if isinstance(blue_obs, np.ndarray):
-            blue_obs = blue_obs.reshape(-1)  # Flatten if needed
-        else:
-            raise TypeError(f"Expected `blue_obs` to be np.ndarray but got {type(blue_obs)}")
-
-        blue_action = self.env.blue_agent.get_action(blue_obs)  # Fixed blue agent
-
+        blue_obs = self.state_po['Blue']
+        blue_action = self.env.blue_agent.get_action(blue_obs)
         state, rewards, done, info = self.env.step(blue_action=blue_action, red_action=red_action)
 
-        return state['Red'].astype(np.float32), float(rewards['Red'][0][0]), False, info
+        self.state_po = state
+        done = self.episode_length >= MAX_STEPS
+
+        return state['Red'].astype(np.float32), float(rewards['Red'][0][0]), done, False, info 
