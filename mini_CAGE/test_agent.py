@@ -301,7 +301,7 @@ class Restore_decoys(React_restore_minimal):
 
 if __name__ == '__main__':
         
-    from .minimal import SimplifiedCAGE
+    from minimal import SimplifiedCAGE
 
     seed = 55749 # random.randint(1, 100000)
     np.random.seed(seed)
