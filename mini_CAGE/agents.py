@@ -17,6 +17,26 @@ class Base_agent:
     def set_initial_values(self):
         pass
 
+class Red_sleep(Base_agent):
+    '''
+    Inactive agent compatible with CAGE implementations.
+    This agent always selects the "sleep" action (action 0).
+    '''
+    def __init__(self, *args, **kwargs):
+        super(Base_agent).__init__(*args, **kwargs)
+
+    def get_action(self, observation, *args, **kwargs):
+        """
+        Always returns action 0 (sleep) for every environment instance.
+        """
+        return np.zeros((observation.shape[0], 1)).astype(int)
+
+    def end_episode(self):
+        """
+        No special end-of-episode behavior needed.
+        """
+        pass
+
 class Blue_sleep(Base_agent):
     '''
     Inactive agent compatible with CAGE implementations.
