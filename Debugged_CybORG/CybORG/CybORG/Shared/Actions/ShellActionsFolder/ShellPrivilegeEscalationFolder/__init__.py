@@ -1,2 +1,0 @@
-from .LinuxKernelPrivilegeEscalation import LinuxKernelPrivilegeEscalation
-from .DirtyCowPrivilegeEscalation import DirtyCowPrivilegeEscalation
