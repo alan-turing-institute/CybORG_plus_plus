@@ -62,11 +62,23 @@ class CAGERedWrapper(gym.Env):
 
     def step(self, action):
         """ Take a step where the RL agent controls the red team. """
-        print("action", action, flush=True)
         red_action = np.array([[action]])  # Format action correctly
 
-        # Flatten Blue observation to match what get_action() expects**
-        blue_obs = self.env.state['Blue'].reshape(-1)  # **Ensure it's 1D**
+        # Debugging: Print the structure of `self.env.state`
+        print(f"🔍 Debug: `self.env.state` type: {type(self.env.state)}")
+        print(f"🔍 Debug: `self.env.state` keys (if dict): {self.env.state.keys() if isinstance(self.env.state, dict) else 'Not a dict'}")
+
+        if isinstance(self.env.state, dict) and 'Blue' in self.env.state:
+            blue_obs = self.env.state['Blue']
+        else:
+            raise KeyError("`self.env.state` does not contain 'Blue'. Check environment output.")
+
+        # **Ensure blue_obs is in the correct format**
+        if isinstance(blue_obs, np.ndarray):
+            blue_obs = blue_obs.reshape(-1)  # Flatten if needed
+        else:
+            raise TypeError(f"Expected `blue_obs` to be np.ndarray but got {type(blue_obs)}")
+
         blue_action = self.env.blue_agent.get_action(blue_obs)  # Fixed blue agent
 
         state, rewards, done, info = self.env.step(blue_action=blue_action, red_action=red_action)
