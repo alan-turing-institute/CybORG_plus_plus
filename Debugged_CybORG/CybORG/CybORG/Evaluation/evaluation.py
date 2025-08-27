@@ -7,7 +7,7 @@ from CybORG import CybORG, CYBORG_VERSION
 from CybORG.Agents import B_lineAgent, SleepAgent
 from CybORG.Agents.SimpleAgents.BaseAgent import BaseAgent
 from CybORG.Agents.SimpleAgents.BlueLoadAgent import BlueLoadAgent
-from CybORG.Agents.SimpleAgents.BlueReactAgent import BlueReactRemoveAgent
+from CybORG.Agents.SimpleAgents.BlueReactAgent import BlueReactRemoveAgent, BlueReactRestoreAgent
 from CybORG.Agents.SimpleAgents.Meander import RedMeanderAgent
 from CybORG.Agents.Wrappers.EnumActionWrapper import EnumActionWrapper
 from CybORG.Agents.Wrappers.FixedFlatWrapper import FixedFlatWrapper
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     wrap_line = lines.split('\n')[1].split('return ')[1]
 
     # Change this line to load your agent
-    agent = BlueLoadAgent()
+    agent = BlueReactRestoreAgent()
 
     print(f'Using agent {agent.__class__.__name__}, if this is incorrect please update the code to load in your agent')
 
@@ -61,11 +61,11 @@ if __name__ == "__main__":
             cyborg = CybORG(path, 'sim', agents={'Red': red_agent})
             wrapped_cyborg = wrap(cyborg)
 
-            observation = wrapped_cyborg.reset()
-            # observation = cyborg.reset().observation
+            # observation = wrapped_cyborg.reset()
+            observation = cyborg.reset().observation
 
-            action_space = wrapped_cyborg.get_action_space(agent_name)
-            # action_space = cyborg.get_action_space(agent_name)
+            # action_space = wrapped_cyborg.get_action_space(agent_name)
+            action_space = cyborg.get_action_space(agent_name)
             total_reward = []
             actions = []
             for i in range(MAX_EPS):
@@ -74,16 +74,16 @@ if __name__ == "__main__":
                 # cyborg.env.env.tracker.render()
                 for j in range(num_steps):
                     action = agent.get_action(observation, action_space)
-                    observation, rew, done, info = wrapped_cyborg.step(action)
-                    # result = cyborg.step(agent_name, action)
-                    r.append(rew)
-                    # r.append(result.reward)
+                    # observation, rew, done, info = wrapped_cyborg.step(action)
+                    result = cyborg.step(agent_name, action)
+                    # r.append(rew)
+                    r.append(result.reward)
                     a.append((str(cyborg.get_last_action('Blue')), str(cyborg.get_last_action('Red'))))
                 agent.end_episode()
                 total_reward.append(sum(r))
                 actions.append(a)
-                # observation = cyborg.reset().observation
-                observation = wrapped_cyborg.reset()
+                observation = cyborg.reset().observation
+                # observation = wrapped_cyborg.reset()
             print(f'Average reward for red agent {red_agent.__name__} and steps {num_steps} is: {mean(total_reward)} with a standard deviation of {stdev(total_reward)}')
             with open(file_name, 'a+') as data:
                 data.write(f'steps: {num_steps}, adversary: {red_agent.__name__}, mean: {mean(total_reward)}, standard deviation {stdev(total_reward)}\n')
