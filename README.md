@@ -162,7 +162,7 @@ the `Debugged_CybORG/CybORG/CybORG/Shared/Actions/AbstractActions/ExploitRemoteS
 | Op_host2     | 22                 | ROOT               | SSHD                 |
 | Defender          | 22, 53, 78         | ROOT, SYSTEMD+     | SSHD, SYSTEMD        |
 
-
+---
 ### License
 
 CybORG++ is released under MIT license. Please see LICENSE for details.
